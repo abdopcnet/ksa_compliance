@@ -95,7 +95,7 @@ def _submit_additional_fields(doc_name: str):
     """Load a fresh doc in the worker to avoid TimestampMismatchError on save()."""
     doc = cast(
         SalesInvoiceAdditionalFields,
-        frappe.get_doc("Sales Invoice Additional Fields", doc_name),
+        frappe.get_doc('Sales Invoice Additional Fields', doc_name),
     )
     logger.info(f'Submitting {doc.name}')
     result = doc.submit_to_zatca()
