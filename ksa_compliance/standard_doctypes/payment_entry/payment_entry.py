@@ -1,3 +1,5 @@
+from typing import cast
+
 import frappe
 from frappe import _
 
@@ -68,13 +70,18 @@ def create_prepayment_invoice_additional_fields_doctype(self: PaymentEntry, meth
         # the invoice submits successfully after on_submit is run successfully from all apps.
         frappe.utils.background_jobs.enqueue(
             _submit_additional_fields,
-            doc=prepayment_additional_fields_doc,
+            doc_name=prepayment_additional_fields_doc.name,
             enqueue_after_commit=True,
             job_id=get_live_zatca_submit_job_id(prepayment_additional_fields_doc.name),
         )
 
 
-def _submit_additional_fields(doc: SalesInvoiceAdditionalFields):
+def _submit_additional_fields(doc_name: str):
+    """Load a fresh doc in the worker to avoid TimestampMismatchError on save()."""
+    doc = cast(
+        SalesInvoiceAdditionalFields,
+        frappe.get_doc("Sales Invoice Additional Fields", doc_name),
+    )
     logger.info(f'Submitting {doc.name}')
     result = doc.submit_to_zatca()
     message = result.ok_value if is_ok(result) else result.err_value

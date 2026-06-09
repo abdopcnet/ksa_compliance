@@ -638,7 +638,7 @@ def fix_rejection(id: str):
     if settings.is_live_sync:
         frappe.utils.background_jobs.enqueue(
             _submit_additional_fields,
-            doc=new_siaf,
+            doc_name=new_siaf.name,
             enqueue_after_commit=True,
             job_id=get_live_zatca_submit_job_id(new_siaf.name),
         )
@@ -672,7 +672,12 @@ def _get_integration_status(code: int) -> ZatcaIntegrationStatus:
         return 'Resend'
 
 
-def _submit_additional_fields(doc: SalesInvoiceAdditionalFields):
+def _submit_additional_fields(doc_name: str):
+    """Load a fresh doc in the worker to avoid TimestampMismatchError on save()."""
+    doc = cast(
+        SalesInvoiceAdditionalFields,
+        frappe.get_doc("Sales Invoice Additional Fields", doc_name),
+    )
     logger.info(f'Submitting {doc.name}')
     result = doc.submit_to_zatca()
     message = result.ok_value if is_ok(result) else result.err_value
